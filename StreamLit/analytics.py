@@ -5,41 +5,37 @@ import json
 import streamlit as st
 from django.http import request
 import streamlit as st
-
-col1, col2= st.columns(2)
-
-data = {
-            "title": "Streamlit Request",
-            "body": "This is a sample request",
-            "userId": 1
-        }
-with col1:
-    if st.button('Post'):
-        response_post = requests.post("http://127.0.0.1:8000/analytics", data=data)
-        if response_post.status_code == 200:
-            st.write("POST request successful!")
-            st.write(data)
-        else:
-            st.write(f"POST request failed! {response_post.status_code}")
-    else:
-        st.write('click here')
-
-with col2:
-    a=st.button
-    if a('get'):
-        response_get = requests.get("http://127.0.0.1:8000/analytics")
-        if response_get.status_code == 200:
-            st.write("GET request successful!")
-            st.write("Response:")
-            st.write(response_get.json())
-            
-            
-        else:
-            st.write(f"GET request failed! {response_get.status_code}")
-    else:
-        st.write('click here')
+import pandas as pd
+import altair as alt
 
 
+import streamlit as st
+
+# Define options for the dropdown
+options = ['Table', 'Mode of Transanction', 'PIE Chart']
+
+
+get_method=requests.get('http://127.0.0.1:8000/analytics/?type=table')
+if get_method.status_code == 200:
+    # Extract the data from the response
+    data = get_method.json()
+    customer = data['customer']
+    mode = data['values']
+    
+# Create a sample data frame
+    data = {
+        'Customer Id': [i for i in customer],
+        'Frequent mode of Transanction': [i for i in mode],
+    }
+    df = pd.DataFrame(data)
+    # Add a serial number column
+    df.insert(0, 'S.No', range(1, len(df) + 1))
+    # Convert DataFrame to HTML table without index column
+    html_table = df.to_html(index=False)
+    # Display the table
+    st.write(html_table, unsafe_allow_html=True)
+else:
+    st.error(f'Error: {get_method.status_code}')
 
 
 

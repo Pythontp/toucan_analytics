@@ -1,41 +1,45 @@
+
 from django.shortcuts import render,HttpResponse
 from django.http import JsonResponse
-import requests
-import json
-from django.views.decorators.csrf import csrf_exempt
 
+from django.views.decorators.csrf import csrf_exempt
+from .models import CustomerData
 import csv
+from django.db import models
+from django.db.models import Count,Sum,Max
 
 
 # Create your views here.
+def table(request):
+    unique_customers=CustomerData.objects.values('customer_Id').annotate(frequent_modes_of_transanction=Max('mode_of_payments'))
+    # For TABLE
+    customer = []
+    values = []
+    for item in unique_customers:
+        customer.append(item['customer_Id'])
+        values.append(item['frequent_modes_of_transanction'])
+
+    response_data = {
+            "customer" : customer,
+            "values" :values
+        }
+    # Return the JSON response
+    return JsonResponse(response_data)
+
+
+
 @csrf_exempt
 def analytics(request):
-    
     if request.method == "GET":
-        file = open('/home/gopikrishna/Taigo/analytics_env/toucan_analytics/Data/data_for_database.csv',mode='r')
-        data = csv.reader(file)
-        dL = list(data)
-        dataList = dL[1:]
-        for row in dataList:
-            customerid = row[1]
-            category = row[2]
-            modeOfPayment = row[3]
-            amount = row[4]
-            date = row[5]
-            break
-
-        dictt = {
-            
-            "customerid" : customerid,
-            "category" : category,
-            "mode" : modeOfPayment,
-            "amount" : amount,
-            "date" : date
-        }
-        file.close()
-        return JsonResponse(dictt)
+        type = request.GET.get('type')
+        if type == "table":
+            response = table(request)
+            return response
+        else:
+            return HttpResponse("WOW")
+    else:
+        return HttpResponse("WOW")
     
-    return HttpResponse("wow")
 
 def index(request):
     return HttpResponse("index")
